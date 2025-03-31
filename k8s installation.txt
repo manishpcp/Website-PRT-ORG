@@ -1,4 +1,4 @@
-# Kubeadm Installation Guide manishddd
+# Kubeadm Installation Guide manish
 
 This guide outlines the steps needed to set up a Kubernetes cluster using kubeadm.
 
