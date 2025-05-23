@@ -2,13 +2,17 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'your-dockerhub-username/website:latest'
-        KUBECONFIG_CREDENTIALS_ID = 'kubeconfig-credentials'
-        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
+        DOCKER_IMAGE = "manishpcp/website-prt-org"
+        DOCKER_TAG = "latest"
+        KUBE_CONFIG = credentials('kubeconfig') // Optional: Jenkins credential ID
+    }
+
+    triggers {
+        pollSCM('* * * * *')  // Poll for changes every minute (customize this)
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
                 checkout scm
             }
@@ -17,17 +21,16 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}")
+                    dockerImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push to DockerHub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withDockerRegistry([credentialsId: 'dockerhub-creds', url: '']) {
                     script {
-                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                        sh "docker push ${DOCKER_IMAGE}"
+                        dockerImage.push()
                     }
                 }
             }
@@ -35,20 +38,20 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIALS_ID}", variable: 'KUBECONFIG')]) {
-                    sh 'kubectl apply -f k8s-manifests/deployment.yaml'
-                    sh 'kubectl apply -f k8s-manifests/service.yaml'
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    sh 'kubectl apply -f k8s/deployment.yaml'
+                    sh 'kubectl apply -f k8s/service.yaml'
                 }
             }
         }
     }
 
     post {
-        failure {
-            echo 'Pipeline failed!'
-        }
         success {
-            echo 'Deployment successful!'
+            echo '✅ Deployment successful!'
+        }
+        failure {
+            echo '❌ Build or deployment failed!'
         }
     }
 }
