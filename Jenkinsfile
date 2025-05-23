@@ -19,6 +19,7 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            agent { label 'docker-agent' }
             steps {
                 script {
                     dockerImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
