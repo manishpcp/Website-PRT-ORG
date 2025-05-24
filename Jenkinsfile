@@ -26,8 +26,8 @@ pipeline {
 
         stage('K8s') {
             steps {
-                sh 'sudo kubectl apply -f deployment.yaml'
-                sh 'sudo kubectl apply -f service.yaml'
+                sh 'sudo kubectl apply -f k8s-manifests/deployment.yaml'
+                sh 'sudo kubectl apply -f k8s-manifests/service.yaml'
             }
         }
     }
