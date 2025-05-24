@@ -1,58 +1,28 @@
 pipeline {
-    agent any
-
     environment {
-        DOCKER_IMAGE = "manishpcp/website-prt-org"
-        DOCKER_TAG = "latest"
-        KUBE_CONFIG = credentials('kubeconfig') // Optional: Jenkins credential ID
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
     }
-
-    triggers {
-        pollSCM('* * * * *')  // Poll for changes every minute (customize this)
+    agent   {
+        label 'kubernetes'
     }
-
-    stages {
-        stage('Checkout') {
+    stages  {
+        stage('Git')    {
+            git url:'https://github.com/manishpcp/Website-PRT-ORG/', branch: 'main'
+        }
+        stage('Docker')  {
             steps {
-                checkout scm
+                sh 'sudo docker login -u $DOCKERHUB_CREDENTIALS_USR -p $DOCKERHUB_CREDENTIALS_PSW'
+                sh 'sudo docker build /home/ubuntu/jenkins/workspace/my-project-pipeline/ -t manishpcp/prt-task'
+                sh 'sudo docker push manishpcp/prt-task'
             }
         }
-
-        stage('Build Docker Image') {
-            agent { label 'docker-agent' }
+        stage('K8s')   {
             steps {
-                script {
-                    dockerImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
                 }
             }
         }
 
-        stage('Push to DockerHub') {
-            steps {
-                withDockerRegistry([credentialsId: 'dockerhub-creds', url: '']) {
-                    script {
-                        dockerImage.push()
-                    }
-                }
-            }
-        }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                withKubeConfig([credentialsId: 'kubeconfig']) {
-                    sh 'kubectl apply -f k8s/deployment.yaml'
-                    sh 'kubectl apply -f k8s/service.yaml'
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            echo '✅ Deployment successful!'
-        }
-        failure {
-            echo '❌ Build or deployment failed!'
-        }
-    }
 }
