@@ -17,17 +17,17 @@ pipeline {
         stage('Docker') {
             steps {
                 script {
-                    sh "docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PSW}"
-                    sh "docker build -t manishpcp/prt-task ."
-                    sh "docker push manishpcp/prt-task"
+                    sh "sudo docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PSW}"
+                    sh "sudo docker build -t manishpcp/prt-task ."
+                    sh "sudo docker push manishpcp/prt-task"
                 }
             }
         }
 
         stage('K8s') {
             steps {
-                sh 'kubectl apply -f deployment.yaml'
-                sh 'kubectl apply -f service.yaml'
+                sh 'sudo kubectl apply -f deployment.yaml'
+                sh 'sudo kubectl apply -f service.yaml'
             }
         }
     }
