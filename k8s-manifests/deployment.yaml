@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: website
-        image: sameer8080/website-prt-org:latest
+        image: manishpcp/prt-task:latest
         ports:
         - containerPort: 80
