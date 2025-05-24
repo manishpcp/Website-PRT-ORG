@@ -6,7 +6,7 @@ pipeline {
         label 'kubernetes'
     }
     stages  {
-        stage('Git')    {
+        stage('fetch')    {
             git url:'https://github.com/manishpcp/Website-PRT-ORG/', branch: 'main'
         }
         stage('Docker')  {
